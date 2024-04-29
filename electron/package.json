@@ -1,0 +1,12 @@
+{
+  "name": "whatsapp-relay",
+  "version": "1.0.0",
+  "description": "Whatsapp Relay",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Dedan Irungu",
+  "license": "ISC"
+}
