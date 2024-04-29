@@ -1,11 +1,53 @@
 const { Client } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
+const fs = require('fs');
+const path = require('path');
+const puppeteer = require('puppeteer');
 
-const client = new Client();
+(async () => {
+    const operatingSystems = [
+      {
+        platform: "linux",
+        version: 818858,
+      },
+      // "mac",
+      {
+        platform: "win64",
+        version: 555668,
+      },
+    ];
+    operatingSystems.forEach(async (os) => {
+      const f = puppeteer.createBrowserFetcher({
+        platform: os.platform,
+        path: path.join(__dirname, "dist", "puppeteer"),
+      });
+      await f.download(os.version);
+    });
+  })();
 
-client.on('qr', (qr) => {
-    // Generate and display QR code
+const sessionData = require('./session.json');
+
+const client = new Client({
+    session: sessionData,
+    webVersionCache: {
+        type: "remote",
+        remotePath:
+            "https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html",
+    },
+});
+
+client.on('qr', qr => {
     qrcode.generate(qr, { small: true });
+});
+
+client.on('authenticated', (session) => {
+    console.log('Authenticated');
+    sessionData = session;
+    fs.writeFile(SESSION_FILE_PATH, JSON.stringify(session), (err) => {
+        if (err) {
+            console.error(err);
+        }
+    });
 });
 
 client.on('ready', () => {
@@ -20,6 +62,11 @@ client.on('message', async (msg) => {
 });
 
 client.initialize();
+
+client.on('disconnected', (reason) => {
+    console.log('Client was logged out or disconnected, reason:', reason);
+    // Restart code
+});
 
 // Function to send a message to a specific number
 async function sendMessage(number, message) {

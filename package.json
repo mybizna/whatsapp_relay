@@ -7,11 +7,19 @@
     "whatsapp-bot": "index.js"
   },
   "scripts": {
-    "start": "node index.js"
+    "pkg": "rm -rf ./pkg && pkg  --out-path pkg .",
+    "postpkg": "mkdir -p ./pkg/node_modules/puppeteer && cp -R ./node_modules/puppeteer/.local-chromium ./pkg/node_modules/puppeteer"
+  },
+  "pkg": {
+    "assets": [
+      "index.js",
+      "session.json",
+      "node_modules/puppeteer/.local-chromium/**/*"
+    ]
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "fs": "^0.0.1-security",
     "qrcode-terminal": "^0.12.0",
