@@ -10,9 +10,9 @@ if %errorlevel% neq 0 (
 )
 
 rem Set default version to BASE_VERSION, CUR_VERSION and NEW_VERSION
-set "BASE_VERSION=0.01"
-set "CUR_VERSION=0.01"
-set "NEW_VERSION=0.01"
+set "BASE_VERSION=0.02"
+set "CUR_VERSION=0.02"
+set "NEW_VERSION=0.02"
 set "INSTALL=YES"
 
 rem Check if cur_version.txt exists, if yes, read the current version from it
