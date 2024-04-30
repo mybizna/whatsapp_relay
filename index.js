@@ -1,11 +1,19 @@
-const { Client } = require('whatsapp-web.js');
+const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const fs = require('fs');
 
-const sessionData = require('./session.json');
+const wwebVersion = '2.2412.54'; // WhatsApp Web version to use
 
 const client = new Client({
-    session: sessionData,
+    auth: new LocalAuth(),
+    puppeteer: {
+        // puppeteer args here
+    },
+    // locking the wweb version
+    webVersionCache: {
+        type: 'remote',
+        remotePath: `https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/${wwebVersion}.html`,
+    },
 });
 
 client.on('qr', qr => {
