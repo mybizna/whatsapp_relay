@@ -10,11 +10,15 @@ if (!fs.existsSync(PAYMENTS_DIRECTORY)) {
 }
 
 async function processMessage(message) {
+   
     // Save messages that trigger the bot to respond into a CSV file
     await saveMessageToCSV(message, MESSAGES_FILE_PATH);
-
+  
     // Call message parser function for eligible messages
     const parsedMessage = messageParser(message);
+
+    console.log(parsedMessage);
+    console.log('parsedMessage');
 
     if (parsedMessage) {
         return responseMessage(parsedMessage);
@@ -51,37 +55,44 @@ function saveMessageToCSV(message, filePath) {
 
 // Message parser function
 function messageParser(message) {
-    if (message.startsWith('@bot') || message.startsWith('/bot') || message.includes('M-PESA')) {
+    if (message.includes('@bot') || message.includes('/bot') || message.includes('M-PESA') || message.includes('Utility balance')) {
         let messageFormats = [
             {
                 "slug": "paybill_number",
-                "format": /(.*) Confirmed\. on (.*) at (.*) (.*) received from (.*) (.*) Account Number (.*) New Utility balance/,
+                "format": "(.*) Confirmed. on (.*) at (.*) (.*) received from (.*) (.*) Account Number (.*) New Utility balance",
                 "fields_str": ['code', 'date', 'time', 'amount', 'name', 'phone', 'account'],
             },
             {
                 "slug": "personal_number",
-                "format": /(.*) Confirmed\.You have received (.*) from (.*) (.*) on (.*) at (.*) New M-PESA balance/,
+                "format": "(.*) Confirmed. You have received (.*) from (.*) (.*) on (.*) at (.*) New M-PESA balance",
                 "fields_str": ['code', 'amount', 'name', 'phone', 'date', 'time'],
             },
             {
                 "slug": "sent_number_confirmation",
-                "format": /(.*) Confirmed\.(.*) sent to (.*) (.*) on (.*) at (.*)\. New M-PESA/,
+                "format": "(.*) Confirmed.(.*) sent to (.*) (.*) on (.*) at (.*). New M-PESA",
                 "fields_str": ['code', 'amount', 'name', 'phone', 'date', 'time'],
             },
             {
                 "slug": "sent_pochi_confirmation",
-                "format": /(.*) Confirmed\.(.*) sent to (.*) on (.*) at (.*)\. New M-PESA/,
+                "format": "(.*) Confirmed.(.*) sent to (.*) on (.*) at (.*). New M-PESA",
                 "fields_str": ['code', 'amount', 'name', 'date', 'time'],
             },
             {
                 "slug": "sent_tillno_confirmation",
-                "format": /(.*) Confirmed\.(.*) paid to (.*) on (.*) at (.*)\. New M-PESA/,
+                "format": "(.*) Confirmed.(.*) paid to (.*) on (.*) at (.*). New M-PESA",
                 "fields_str": ['code', 'amount', 'name', 'date', 'time'],
             }
         ];
 
         for (let format of messageFormats) {
             const match = message.match(format.format);
+          
+            console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
+            console.log('match');
+            console.log(message);
+            console.log(format);
+            console.log(match);
+
             if (match) {
                 let fields = {};
                 for (let i = 1; i < match.length; i++) {
