@@ -1,6 +1,8 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const fs = require('fs');
+const { processMessage, } = require('./functions');
+
 
 const wwebVersion = '2.2412.54'; // WhatsApp Web version to use
 
@@ -35,9 +37,18 @@ client.on('ready', () => {
 });
 
 client.on('message', async (msg) => {
-    if (msg.body === 'ping') {
-        // Reply to 'ping' message
-        await msg.reply('pong');
+    await client.sendSeen(msg.from);
+
+    if (msg.from.endsWith('@g.us') && msg.author === 'Test Group') {
+
+        (async () => {
+            let response = await processMessage(msg.body);
+
+            if (response) {
+                await sendMessage(response);
+            }
+        })();
+
     }
 });
 
@@ -47,6 +58,10 @@ client.on('disconnected', (reason) => {
     console.log('Client was logged out or disconnected, reason:', reason);
     // Restart code
 });
+
+
+
+
 
 // Function to send a message to a specific number
 async function sendMessage(number, message) {
@@ -62,7 +77,4 @@ async function sendMessage(number, message) {
 }
 
 
-// Example usage:
-// Replace 'XXXXXXXXXXXX' with the recipient's phone number in international format (e.g., '+1234567890')
-// Replace 'Hello, world!' with the message you want to send
-//sendMessage('XXXXXXXXXXXX', 'Hello, world!');
+
