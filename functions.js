@@ -10,15 +10,14 @@ if (!fs.existsSync(PAYMENTS_DIRECTORY)) {
 }
 
 async function processMessage(message) {
-   
+
     // Save messages that trigger the bot to respond into a CSV file
     await saveMessageToCSV(message, MESSAGES_FILE_PATH);
-  
+
     // Call message parser function for eligible messages
     const parsedMessage = messageParser(message);
 
-    console.log(parsedMessage);
-    console.log('parsedMessage');
+    
 
     if (parsedMessage) {
         return responseMessage(parsedMessage);
@@ -28,13 +27,15 @@ async function processMessage(message) {
 }
 
 function responseMessage(parsedMessage) {
-    const response = `Your have made a payment of Ksh. ${parsedMessage.fields.amount} was Successful. \n\n` +
-        `Transaction ID: ${parsedMessage.fields.code} \n` +
-        `Name: ${parsedMessage.fields.name} \n` +
-        `Date: ${parsedMessage.fields.date} ${parsedMessage.fields.time} \n` +
-        `Account: ${parsedMessage.fields.account} ${parsedMessage.fields.phone} \n` +
-        `Amount: ${parsedMessage.fields.amount} \n\n` +
-        "Thank you."
+    const response = `Your payment of Ksh. ${parsedMessage.fields.amount} was Successful. ` + "\n\n" +
+        `Transaction ID: ${parsedMessage.fields.code} ` + "\n" +
+        `Name: ${parsedMessage.fields.name} ` + "\n" +
+        `Date: ${parsedMessage.fields.date} ${parsedMessage.fields.time} ` + "\n" +
+        `Account: ${parsedMessage.fields.account} ${parsedMessage.fields.phone} ` + "\n" +
+        `Amount: ${parsedMessage.fields.amount} ` + "\n\n" +
+        "Thank you.";
+        
+        console.log(response);
 
     return response;
 }
@@ -86,20 +87,16 @@ function messageParser(message) {
 
         for (let format of messageFormats) {
             const match = message.match(format.format);
-          
-            console.log('xxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
-            console.log('match');
-            console.log(message);
-            console.log(format);
-            console.log(match);
 
             if (match) {
+
                 let fields = {};
                 for (let i = 1; i < match.length; i++) {
                     fields[format.fields_str[i - 1]] = match[i].trim();
                 }
                 // Save parsed messages into separate CSV files based on their slug
                 saveMessageToCSV(fields, `${PAYMENTS_DIRECTORY}${format.slug}.csv`);
+
                 return { slug: format.slug, fields: fields };
             }
         }
