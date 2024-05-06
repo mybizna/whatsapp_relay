@@ -61,6 +61,7 @@ async function sendMessage(number, message) {
     }
 }
 
+
 // Example usage:
 // Replace 'XXXXXXXXXXXX' with the recipient's phone number in international format (e.g., '+1234567890')
 // Replace 'Hello, world!' with the message you want to send
