@@ -179,8 +179,6 @@ function messageParser(message) {
     return null;
 }
 
-
-
 // Function to get the next member_no
 function getNextMemberNumber(filePath) {
     return new Promise((resolve, reject) => {
