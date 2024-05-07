@@ -16,7 +16,7 @@ let response = `Your payment of Ksh. 100.00 was Successful.
 
 Transaction ID: DT85TH896 
 Name: John Doe 
-Date: 2021-09-01 12.00 PM 
+Date: 7/5/24 12.00 PM 
 Account: 123456 0712345678 
 Amount: 100.00 
 
@@ -26,7 +26,7 @@ let response2 = `Your payment of Ksh. 100.00 was Successful.
 
 Transaction ID: DT85TH896 
 Name: John Doe 
-Date: 2021-09-01 12.00 PM 
+Date: 7/5/24 12.00 PM 
 Account: 0712345678 
 Amount: 100.00 
 
@@ -36,7 +36,7 @@ let response3 = `Your payment of Ksh. 100.00 was Successful.
 
 Transaction ID: DT85TH896 
 Name: John Doe 
-Date: 2021-09-01 12.00 PM 
+Date: 7/5/24 12.00 PM 
 Account: 0712345678 
 Amount: 100.00 
 
@@ -46,7 +46,7 @@ let response4 = `Your payment of Ksh. 100.00 was Successful.
 
 Transaction ID: DT85TH896 
 Name:  
-Date: 2021-09-01 12.00 PM 
+Date: 7/5/24 12.00 PM 
 Account:  
 Amount: 100.00 
 
@@ -61,6 +61,27 @@ Account:
 Amount: 3,500.00 
 
 Thank you.`;
+
+let response6 = `Your payment of Ksh. 100.00 was Successful.
+
+Transaction ID: DT85TH896
+Name: John Doe
+Date: 7/5/24 12.00 PM
+Account: 0712345678
+Amount: 100.00
+
+Thank you.`;
+
+let response7 = `Your payment of Ksh. 100.00 was Successful.
+
+Transaction ID: DT85TH896
+Name: John Doe
+Date: 7/5/24 12.00 PM
+Account: 0712345678
+Amount: 100.00
+
+Thank you.`;
+
 
 describe("functions", () => {
 
@@ -87,6 +108,16 @@ describe("functions", () => {
     test(message5, async () => {
         console.log(await processMessage(message5));
         expect(await processMessage(message5)).toBe(response5);
+    });
+
+    test(message6, async () => {
+        console.log(await processMessage(message6));
+        expect(await processMessage(message6)).toBe(response6);
+    });
+
+    test(message7, async () => {
+        console.log(await processMessage(message7));
+        expect(await processMessage(message7)).toBe(response7);
     });
 
     test(member, async () => {

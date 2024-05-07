@@ -143,6 +143,11 @@ async function messageParser(message) {
                 "fields_str": ['code', 'amount', 'name', 'phone', 'date', 'time'],
             },
             {
+                "slug": "pochi_number",
+                "format": "(.*) Confirmed.You have received (.*) from (.*) on (.*) at (.*) New business balance",
+                "fields_str": ['code', 'amount', 'name', 'date', 'time'],
+            },
+            {
                 "slug": "sent_number_confirmation",
                 "format": "(.*) Confirmed.(.*) sent to (.*) (.*) on (.*) at (.*). New M-PESA",
                 "fields_str": ['code', 'amount', 'name', 'phone', 'date', 'time'],
