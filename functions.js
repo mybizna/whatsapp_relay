@@ -34,9 +34,6 @@ async function processMessage(message) {
     const year = date.getFullYear();
     const month = month_names[date.getMonth()];
 
-
-    console.log('xxxxxxxxxxxxxxxxxxx async processMessage')
-
     // Save messages that trigger the bot to respond into a CSV file
     await saveToCSV({ 'message': message }, MESSAGES_DIRECTORY + '/' + year + '-' + month + '.csv');
 
@@ -47,11 +44,7 @@ async function processMessage(message) {
         return responseMessage(parsedMessage);
     }
 
-    console.log('xxxxxxxxxxxxxxxxxxx await processMessage')
-
     return null;
-
-
 }
 
 /**
@@ -91,11 +84,11 @@ function responseMessage(parsedMessage) {
 
             let account = '';
 
-            if(parsedMessage.fields.account && parsedMessage.fields.phone){
+            if (parsedMessage.fields.account && parsedMessage.fields.phone) {
                 account = `${parsedMessage.fields.account} ${parsedMessage.fields.phone}`;
-            } else if(parsedMessage.fields.account){
+            } else if (parsedMessage.fields.account) {
                 account = parsedMessage.fields.account;
-            }else if(parsedMessage.fields.phone){
+            } else if (parsedMessage.fields.phone) {
                 account = parsedMessage.fields.phone;
             }
 
@@ -147,7 +140,7 @@ async function messageParser(message) {
                 "slug": "pochi_number",
                 "format": "(.*) Confirmed.You have received (.*) from (.*) on (.*) at (.*) New business",
                 "fields_str": ['code', 'amount', 'name', 'date', 'time'],
-            },  
+            },
             {
                 "slug": "sent_paybill_confirmation",
                 "format": "(.*) Confirmed.(.*) sent to (.*) for account (.*) on (.*) at (.*) New M-PESA",
@@ -191,12 +184,6 @@ async function messageParser(message) {
                 // Check if last character for time is M and add it if not
                 if (fields.time.charAt(fields.time.length - 1) !== 'M') {
                     fields.time += 'M';
-                }
-
-                
-                if (format.slug === 'pochi_number') {
-                    console.log('pochi_number');
-                    console.log(fields);
                 }
 
                 // Save parsed messages into separate CSV files based on their slug
