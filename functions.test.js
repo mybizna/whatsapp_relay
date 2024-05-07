@@ -66,7 +66,7 @@ let response5 = `Your payment of Ksh. 3,500.00 was Successful.
 Transaction ID: DT85TH896 
 Name: 501901 - KCB Money Transfer Services 
 Date: 31/7/13 6:43 PM 
-Account:  
+Account:   
 Amount: 3,500.00 
 
 Thank you.`;
@@ -86,7 +86,7 @@ let response7 = `Your payment of Ksh. 100.00 was Successful.
 Transaction ID: DT85TH896 
 Name: John Doe 
 Date: 7/5/24 12.00 PM 
-Account: 
+Account:  
 Amount: 100.00 
 
 Thank you.`;
