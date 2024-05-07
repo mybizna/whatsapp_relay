@@ -105,27 +105,22 @@ Thank you.`;
 
 describe("functions", () => {
 
-     /*
+     
     test(message, async () => {
-        console.log(await processMessage(message));
         expect(await processMessage(message)).toBe(response);
     });
 
     test(message2, async () => {
-        console.log(await processMessage(message2));
         expect(await processMessage(message2)).toBe(response2);
     });
 
     test(message3, async () => {
-        console.log(await processMessage(message3));
         expect(await processMessage(message3)).toBe(response3);
     });
 
     test(message4, async () => {
-        console.log(await processMessage(message4));
         expect(await processMessage(message4)).toBe(response4);
     });
-    */
 
     /*
     test(message5, async () => {
@@ -133,20 +128,15 @@ describe("functions", () => {
         expect(await processMessage(message5)).toBe(response5);
     });*/
 
-    /*
     test(message6, async () => {
-        console.log(await processMessage(message6));
         expect(await processMessage(message6)).toBe(response6);
     });
 
     test(message7, async () => {
-        console.log(await processMessage(message7));
         expect(await processMessage(message7)).toBe(response7);
     });
-    */
 
     test(message8, async () => {
-        console.log(await processMessage(message8));
         expect(await processMessage(message8)).toBe(response8);
     });
 
