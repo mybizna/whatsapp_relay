@@ -83,6 +83,8 @@ function responseMessage(parsedMessage) {
             break;
         case 'paybill_number':
         case 'personal_number':
+        case 'pochi_number':
+        case 'sent_paybill_confirmation':
         case 'sent_number_confirmation':
         case 'sent_pochi_confirmation':
         case 'sent_tillno_confirmation':
@@ -148,6 +150,11 @@ async function messageParser(message) {
                 "fields_str": ['code', 'amount', 'name', 'date', 'time'],
             },
             {
+                "slug": "sent_paybill_confirmation",
+                "format": "(.*) Confirmed.(.*) sent to (.*) for account (.*) on (.*) at (.*) New M-PESA",
+                "fields_str": ['code', 'amount', 'name', 'date', 'time'],
+            },
+            {
                 "slug": "sent_number_confirmation",
                 "format": "(.*) Confirmed.(.*) sent to (.*) (.*) on (.*) at (.*). New M-PESA",
                 "fields_str": ['code', 'amount', 'name', 'phone', 'date', 'time'],
@@ -160,11 +167,6 @@ async function messageParser(message) {
             {
                 "slug": "sent_tillno_confirmation",
                 "format": "(.*) Confirmed.(.*) paid to (.*) on (.*) at (.*).New M-PESA",
-                "fields_str": ['code', 'amount', 'name', 'date', 'time'],
-            },
-            {
-                "slug": "sent_paybill_confirmation",
-                "format": "(.*) Confirmed.(.*) sent to (.*) for account (.*) on (.*) at (.*) New M-PESA",
                 "fields_str": ['code', 'amount', 'name', 'date', 'time'],
             }
 
@@ -186,6 +188,12 @@ async function messageParser(message) {
 
                 // convert amount from Ksh. 1,000 to 1000
                 fields.amount = fields.amount.replace(/[^0-9.-]+/g, "");
+
+                // Check if last character for time is M and add it if not
+                if (fields.time.charAt(fields.time.length - 1) !== 'M') {
+                    fields.time += 'M';
+                }
+                console.log(fields);
 
                 // Save parsed messages into separate CSV files based on their slug
                 saveToCSV(fields, `${PAYMENTS_DIRECTORY}${format.slug}-${year}-${month}.csv`);
