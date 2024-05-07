@@ -34,17 +34,24 @@ async function processMessage(message) {
     const year = date.getFullYear();
     const month = month_names[date.getMonth()];
 
+
+    console.log('xxxxxxxxxxxxxxxxxxx async processMessage')
+
     // Save messages that trigger the bot to respond into a CSV file
     await saveToCSV({ 'message': message }, MESSAGES_DIRECTORY + '/' + year + '-' + month + '.csv');
 
     // Call message parser function for eligible messages
-    const parsedMessage = messageParser(message);
+    const parsedMessage = await messageParser(message);
 
     if (parsedMessage) {
         return responseMessage(parsedMessage);
     }
 
+    console.log('xxxxxxxxxxxxxxxxxxx await processMessage')
+
     return null;
+
+
 }
 
 /**
@@ -53,19 +60,55 @@ async function processMessage(message) {
  * @returns 
  */
 function responseMessage(parsedMessage) {
-    const response = `Your payment of Ksh. ${parsedMessage.fields.amount} was Successful. ` + "\n\n" +
-        `Transaction ID: ${parsedMessage.fields.code} ` + "\n" +
-        `Name: ${parsedMessage.fields.name} ` + "\n" +
-        `Date: ${parsedMessage.fields.date} ${parsedMessage.fields.time} ` + "\n" +
-        `Account: ${parsedMessage.fields.account} ${parsedMessage.fields.phone} ` + "\n" +
-        `Amount: ${parsedMessage.fields.amount} ` + "\n\n" +
-        "Thank you.";
+
+    let response = '';
+
+    switch (parsedMessage.slug) {
+        case 'member':
+            if (parsedMessage.status === 'new') {
+                response = `Member Sucessfully added: \n\n` +
+                    `Member No: ${parsedMessage.fields.member_no} ` + "\n\n" +
+                    `Name: ${parsedMessage.fields.name} ` + "\n" +
+                    `Phone: ${parsedMessage.fields.phone} ` + "\n" +
+                    `Date: ${parsedMessage.fields.date} ` + "\n" +
+                    `Status: ${parsedMessage.status} ` + "\n\n" +
+                    "Thank you.";
+            } else {
+                response = `Member already exists: \n\n` +
+                    `Name: ${parsedMessage.fields.name} ` + "\n" +
+                    `Phone: ${parsedMessage.fields.phone} ` + "\n" +
+                    `Status: ${parsedMessage.status} ` + "\n\n" +
+                    "Thank you.";
+            }
+            break;
+        case 'paybill_number':
+        case 'personal_number':
+        case 'sent_number_confirmation':
+        case 'sent_pochi_confirmation':
+        case 'sent_tillno_confirmation':
+
+            let account = '';
+
+            if (parsedMessage.fields.account || parsedMessage.fields.phone) {
+                account = (parsedMessage.fields.account)
+                    ? `${parsedMessage.fields.account} ${parsedMessage.fields.phone}`
+                    : `${parsedMessage.fields.phone}`;
+            }
+
+            response = `Your payment of Ksh. ${parsedMessage.fields.amount} was Successful. ` + "\n\n" +
+                `Transaction ID: ${parsedMessage.fields.code} ` + "\n" +
+                `Name: ${parsedMessage.fields.name} ` + "\n" +
+                `Date: ${parsedMessage.fields.date} ${parsedMessage.fields.time} ` + "\n" +
+                `Account: ${account} ` + "\n" +
+                `Amount: ${parsedMessage.fields.amount} ` + "\n\n" +
+                "Thank you.";
 
 
-    return response;
+            return response;
+    }
 }
 
-function saveToCSV(fields, filePath) {
+async function saveToCSV(fields, filePath) {
     const writer = csvWriter({
         append: true,
         path: filePath,
@@ -79,14 +122,14 @@ function saveToCSV(fields, filePath) {
     console.log(records);
 
     if (!fs.existsSync(filePath)) {
-        writer.writeRecords(records);
+        await writer.writeRecords(records);
     } else {
-        writer.writeRecords(records, { append: true });
+        await writer.writeRecords(records, { append: true });
     }
 }
 
 // Message parser function
-function messageParser(message) {
+async function messageParser(message) {
     if (message.includes('@bot') || message.includes('/bot') || message.includes('M-PESA') || message.includes('Utility balance')) {
         let messageFormats = [
             {
@@ -106,14 +149,20 @@ function messageParser(message) {
             },
             {
                 "slug": "sent_pochi_confirmation",
-                "format": "(.*) Confirmed.(.*) sent to (.*) on (.*) at (.*). New M-PESA",
+                "format": "(.*) Confirmed.(.*) sent to (.*) on (.*) at (.*).New M-PESA",
                 "fields_str": ['code', 'amount', 'name', 'date', 'time'],
             },
             {
                 "slug": "sent_tillno_confirmation",
-                "format": "(.*) Confirmed.(.*) paid to (.*) on (.*) at (.*). New M-PESA",
+                "format": "(.*) Confirmed.(.*) paid to (.*) on (.*) at (.*).New M-PESA",
+                "fields_str": ['code', 'amount', 'name', 'date', 'time'],
+            },
+            {
+                "slug": "sent_paybill_confirmation",
+                "format": "(.*) Confirmed.(.*) sent to (.*) for account (.*) on (.*) at (.*) New M-PESA",
                 "fields_str": ['code', 'amount', 'name', 'date', 'time'],
             }
+
         ];
 
         const date = new Date();
@@ -148,28 +197,37 @@ function messageParser(message) {
 
         let data = new Date();
         let year = data.getFullYear();
-        let month = data.getMonth() + 1;
-        let day = data.getDate();
+        //let month = data.getMonth() + 1;
+        //let day = data.getDate();
+        let month = (data.getMonth() + 1).toString().padStart(2, '0');
+        let day = data.getDate().toString().padStart(2, '0');
 
+        return await checkPhoneNumberExists(member_path, phone)
+            .then(async exists => {
+                let status = 'exist';
+                let member = { 'name': name, 'phone': phone, };
 
-        checkPhoneNumberExists(member_path, phone)
-            .then(exists => {
                 if (!exists) {
-
-                    getNextMemberNumber(member_path)
+                    member = await getNextMemberNumber(member_path)
                         .then(nextMemberNo => {
 
+                            status = 'new';
+
                             const fields = {
-                                'member_no': nextMemberNo, 
+                                'member_no': nextMemberNo,
                                 'name': name,
-                                'phone': '0723232323',
+                                'phone': phone,
                                 'date': `${year}-${month}-${day}`
                             };
 
                             saveToCSV(fields, member_path);
+
+                            return fields;
                         });
 
+
                 }
+                return { slug: 'member', fields: member, status: status };
             })
             .catch(error => {
                 console.error('Error occurred:', error);
@@ -180,7 +238,7 @@ function messageParser(message) {
 }
 
 // Function to get the next member_no
-function getNextMemberNumber(filePath) {
+async function getNextMemberNumber(filePath) {
     return new Promise((resolve, reject) => {
         let highestMemberNo = 0;
         fs.createReadStream(filePath)
