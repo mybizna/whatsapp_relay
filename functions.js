@@ -12,12 +12,12 @@ if (!fs.existsSync(PAYMENTS_DIRECTORY)) {
 async function processMessage(message) {
 
     // Save messages that trigger the bot to respond into a CSV file
-    await saveMessageToCSV(message, MESSAGES_FILE_PATH);
+    await saveMessageToCSV({ 'message': message }, MESSAGES_FILE_PATH);
 
     // Call message parser function for eligible messages
     const parsedMessage = messageParser(message);
 
-    
+
 
     if (parsedMessage) {
         return responseMessage(parsedMessage);
@@ -34,23 +34,27 @@ function responseMessage(parsedMessage) {
         `Account: ${parsedMessage.fields.account} ${parsedMessage.fields.phone} ` + "\n" +
         `Amount: ${parsedMessage.fields.amount} ` + "\n\n" +
         "Thank you.";
-        
-        console.log(response);
+
+    console.log(response);
 
     return response;
 }
 
-
-function saveMessageToCSV(message, filePath) {
+function saveMessageToCSV(fields, filePath) {
     const writer = csvWriter({
         path: filePath,
-        header: [{ id: 'message', title: 'Message' }]
+        header: Object.keys(fields).map(key => ({ id: key, title: key })) // Create headers from object keys
     });
 
+    console.log(fields);
+
+    // Extract values from the fields object
+    const records = [Object.values(fields)];
+
     if (!fs.existsSync(filePath)) {
-        writer.writeRecords([{ message: message }]);
+        writer.writeRecords(records);
     } else {
-        writer.writeRecords([{ message: message }], { append: true });
+        writer.writeRecords(records, { append: true });
     }
 }
 
