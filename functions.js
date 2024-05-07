@@ -1,6 +1,6 @@
 const fs = require('fs');
 const csvWriter = require('csv-writer').createObjectCsvWriter;
-//const csvWriter = require("csv-writer").createObjectCsvWriter({ append: true }) ;
+const csv = require('csv-parser');
 
 const MESSAGES_DIRECTORY = 'data/messages/';
 const PAYMENTS_DIRECTORY = 'data/payments/';
@@ -15,7 +15,7 @@ if (!fs.existsSync(MESSAGES_DIRECTORY)) {
 }
 
 var month_names = ["jan", "feb", "mar", "apr", "may", "jun",
-"jul", "aug", "sep", "oct", "nov", "dec"
+    "jul", "aug", "sep", "oct", "nov", "dec"
 ];
 
 /**
@@ -29,8 +29,6 @@ var month_names = ["jan", "feb", "mar", "apr", "may", "jun",
  */
 async function processMessage(message) {
 
-
-
     // message file to be combnation of year and month
     const date = new Date();
     const year = date.getFullYear();
@@ -41,8 +39,6 @@ async function processMessage(message) {
 
     // Call message parser function for eligible messages
     const parsedMessage = messageParser(message);
-
-
 
     if (parsedMessage) {
         return responseMessage(parsedMessage);
@@ -133,14 +129,97 @@ function messageParser(message) {
                 for (let i = 1; i < match.length; i++) {
                     fields[format.fields_str[i - 1]] = match[i].trim();
                 }
+
+                // convert amount from Ksh. 1,000 to 1000
+                fields.amount = fields.amount.replace(/[^0-9.-]+/g, "");
+
                 // Save parsed messages into separate CSV files based on their slug
                 saveToCSV(fields, `${PAYMENTS_DIRECTORY}${format.slug}-${year}-${month}.csv`);
 
                 return { slug: format.slug, fields: fields };
             }
         }
+    } else if (message.includes('Name:') && message.includes('Phone:')) {
+
+        const member_path = 'data/members.csv';
+
+        let name = message.match(/Name: (.*)/)[1].trim();
+        let phone = message.match(/Phone: (.*)/)[1].trim();
+
+        let data = new Date();
+        let year = data.getFullYear();
+        let month = data.getMonth() + 1;
+        let day = data.getDate();
+
+
+        checkPhoneNumberExists(member_path, phone)
+            .then(exists => {
+                if (!exists) {
+
+                    getNextMemberNumber(member_path)
+                        .then(nextMemberNo => {
+
+                            const fields = {
+                                'member_no': nextMemberNo, 
+                                'name': name,
+                                'phone': '0723232323',
+                                'date': `${year}-${month}-${day}`
+                            };
+
+                            saveToCSV(fields, member_path);
+                        });
+
+                }
+            })
+            .catch(error => {
+                console.error('Error occurred:', error);
+            });
+
     }
     return null;
+}
+
+
+
+// Function to get the next member_no
+function getNextMemberNumber(filePath) {
+    return new Promise((resolve, reject) => {
+        let highestMemberNo = 0;
+        fs.createReadStream(filePath)
+            .pipe(csv())
+            .on('data', (data) => {
+                const memberNo = parseInt(data.member_no);
+                if (memberNo > highestMemberNo) {
+                    highestMemberNo = memberNo;
+                }
+            })
+            .on('end', () => {
+                // Increment the highest member_no to get the next available number
+                const nextMemberNo = highestMemberNo + 1;
+                resolve(nextMemberNo);
+            })
+            .on('error', (error) => {
+                reject(error);
+            });
+    });
+}
+
+// Function to check if a phone number exists in the CSV file
+function checkPhoneNumberExists(filePath, phoneNumber) {
+    return new Promise((resolve, reject) => {
+        const results = [];
+        fs.createReadStream(filePath)
+            .pipe(csv())
+            .on('data', (data) => results.push(data))
+            .on('end', () => {
+                // Check if the phone number exists in the CSV data
+                const phoneNumberExists = results.some(record => record.phone === phoneNumber);
+                resolve(phoneNumberExists);
+            })
+            .on('error', (error) => {
+                reject(error);
+            });
+    });
 }
 
 

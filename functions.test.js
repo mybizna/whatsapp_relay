@@ -6,6 +6,9 @@ let message3 = "DT85TH896 Confirmed. Ksh 100 sent to John Doe 0712345678 on 2021
 let message4 = "DT85TH896 Confirmed. Ksh 100 sent to 0712345678 on 2021-09-01 at 12.00 PM. New M-PESA";
 let message5 = "DT85TH896 Confirmed. You have received Ksh3,500.00 from 501901 - KCB Money Transfer Services on 31/7/13 at 6:43 PM New M-PESA balance is Ksh11,312.00.Save & get a loan on Mshwari";
 
+let member = "Name: John Doe\n"+
+    "Phone: 0712345678\n";
+
 // Response for message
 let response = "Your payment of Ksh. 100 was Successful. \n\n" +
     "Transaction ID: DT85TH896 \n" +
