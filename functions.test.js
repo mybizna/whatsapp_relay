@@ -77,7 +77,7 @@ Transaction ID: DT85TH896
 Name: John Doe 
 Date: 7/5/24 12.00 PM 
 Account: 0712345678 
-Amount: 100.00  
+Amount: 100.00 
 
 Thank you.`;
 

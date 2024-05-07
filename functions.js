@@ -91,10 +91,12 @@ function responseMessage(parsedMessage) {
 
             let account = '';
 
-            if (parsedMessage.fields.account || parsedMessage.fields.phone) {
-                account = (parsedMessage.fields.account)
-                    ? `${parsedMessage.fields.account} ${parsedMessage.fields.phone}`
-                    : `${parsedMessage.fields.phone}`;
+            if(parsedMessage.fields.account && parsedMessage.fields.phone){
+                account = `${parsedMessage.fields.account} ${parsedMessage.fields.phone}`;
+            } else if(parsedMessage.fields.account){
+                account = parsedMessage.fields.account;
+            }else if(parsedMessage.fields.phone){
+                account = parsedMessage.fields.phone;
             }
 
             response = `Your payment of Ksh. ${parsedMessage.fields.amount} was Successful. ` + "\n\n" +
@@ -119,9 +121,6 @@ async function saveToCSV(fields, filePath) {
 
     // Extract values from the fields object
     const records = [fields];
-
-    console.log('records');
-    console.log(records);
 
     if (!fs.existsSync(filePath)) {
         await writer.writeRecords(records);
@@ -152,7 +151,7 @@ async function messageParser(message) {
             {
                 "slug": "sent_paybill_confirmation",
                 "format": "(.*) Confirmed.(.*) sent to (.*) for account (.*) on (.*) at (.*) New M-PESA",
-                "fields_str": ['code', 'amount', 'name', 'date', 'time'],
+                "fields_str": ['code', 'amount', 'name', 'account', 'date', 'time'],
             },
             {
                 "slug": "sent_number_confirmation",
@@ -193,7 +192,10 @@ async function messageParser(message) {
                 if (fields.time.charAt(fields.time.length - 1) !== 'M') {
                     fields.time += 'M';
                 }
-                console.log(fields);
+
+                if (format.slug === 'sent_paybill_confirmation') {
+                    console.log(fields);
+                }
 
                 // Save parsed messages into separate CSV files based on their slug
                 saveToCSV(fields, `${PAYMENTS_DIRECTORY}${format.slug}-${year}-${month}.csv`);
