@@ -1,18 +1,43 @@
 const fs = require('fs');
 const csvWriter = require('csv-writer').createObjectCsvWriter;
+//const csvWriter = require("csv-writer").createObjectCsvWriter({ append: true }) ;
 
-const MESSAGES_FILE_PATH = 'data/messages.csv';
+const MESSAGES_DIRECTORY = 'data/messages/';
 const PAYMENTS_DIRECTORY = 'data/payments/';
 
 // Create the payments directory if it doesn't exist
 if (!fs.existsSync(PAYMENTS_DIRECTORY)) {
     fs.mkdirSync(PAYMENTS_DIRECTORY);
 }
+// Create the Messages directory if it doesn't exist
+if (!fs.existsSync(MESSAGES_DIRECTORY)) {
+    fs.mkdirSync(MESSAGES_DIRECTORY);
+}
 
+var month_names = ["jan", "feb", "mar", "apr", "may", "jun",
+"jul", "aug", "sep", "oct", "nov", "dec"
+];
+
+/**
+ * Process incoming messages
+ * @param {string} message - The incoming message
+ * @returns {string} - The response message
+ * @async
+ * @function processMessage
+ * @exports processMessage
+ * 
+ */
 async function processMessage(message) {
 
+
+
+    // message file to be combnation of year and month
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = month_names[date.getMonth()];
+
     // Save messages that trigger the bot to respond into a CSV file
-    await saveMessageToCSV({ 'message': message }, MESSAGES_FILE_PATH);
+    await saveToCSV({ 'message': message }, MESSAGES_DIRECTORY + '/' + year + '-' + month + '.csv');
 
     // Call message parser function for eligible messages
     const parsedMessage = messageParser(message);
@@ -26,6 +51,11 @@ async function processMessage(message) {
     return null;
 }
 
+/**
+ * Response message
+ * @param {*} parsedMessage 
+ * @returns 
+ */
 function responseMessage(parsedMessage) {
     const response = `Your payment of Ksh. ${parsedMessage.fields.amount} was Successful. ` + "\n\n" +
         `Transaction ID: ${parsedMessage.fields.code} ` + "\n" +
@@ -35,21 +65,22 @@ function responseMessage(parsedMessage) {
         `Amount: ${parsedMessage.fields.amount} ` + "\n\n" +
         "Thank you.";
 
-    console.log(response);
 
     return response;
 }
 
-function saveMessageToCSV(fields, filePath) {
+function saveToCSV(fields, filePath) {
     const writer = csvWriter({
+        append: true,
         path: filePath,
         header: Object.keys(fields).map(key => ({ id: key, title: key })) // Create headers from object keys
     });
 
-    console.log(fields);
-
     // Extract values from the fields object
-    const records = [Object.values(fields)];
+    const records = [fields];
+
+    console.log('records');
+    console.log(records);
 
     if (!fs.existsSync(filePath)) {
         writer.writeRecords(records);
@@ -89,6 +120,10 @@ function messageParser(message) {
             }
         ];
 
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = month_names[date.getMonth()];
+
         for (let format of messageFormats) {
             const match = message.match(format.format);
 
@@ -99,7 +134,7 @@ function messageParser(message) {
                     fields[format.fields_str[i - 1]] = match[i].trim();
                 }
                 // Save parsed messages into separate CSV files based on their slug
-                saveMessageToCSV(fields, `${PAYMENTS_DIRECTORY}${format.slug}.csv`);
+                saveToCSV(fields, `${PAYMENTS_DIRECTORY}${format.slug}-${year}-${month}.csv`);
 
                 return { slug: format.slug, fields: fields };
             }
@@ -111,6 +146,6 @@ function messageParser(message) {
 
 module.exports = {
     processMessage,
-    saveMessageToCSV,
+    saveToCSV,
     messageParser,
 };
