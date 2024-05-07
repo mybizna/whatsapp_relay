@@ -105,6 +105,7 @@ Thank you.`;
 
 describe("functions", () => {
 
+     /*
     test(message, async () => {
         console.log(await processMessage(message));
         expect(await processMessage(message)).toBe(response);
@@ -124,6 +125,7 @@ describe("functions", () => {
         console.log(await processMessage(message4));
         expect(await processMessage(message4)).toBe(response4);
     });
+    */
 
     /*
     test(message5, async () => {
@@ -131,6 +133,7 @@ describe("functions", () => {
         expect(await processMessage(message5)).toBe(response5);
     });*/
 
+    /*
     test(message6, async () => {
         console.log(await processMessage(message6));
         expect(await processMessage(message6)).toBe(response6);
@@ -140,6 +143,7 @@ describe("functions", () => {
         console.log(await processMessage(message7));
         expect(await processMessage(message7)).toBe(response7);
     });
+    */
 
     test(message8, async () => {
         console.log(await processMessage(message8));

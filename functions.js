@@ -131,7 +131,7 @@ async function saveToCSV(fields, filePath) {
 
 // Message parser function
 async function messageParser(message) {
-    if (message.includes('@bot') || message.includes('/bot') || message.includes('M-PESA') || message.includes('Utility balance')) {
+    if (message.includes('@bot') || message.includes('/bot') || message.includes('M-PESA') || message.includes('Confirmed.') || message.includes('Utility balance')) {
         let messageFormats = [
             {
                 "slug": "paybill_number",
@@ -193,7 +193,9 @@ async function messageParser(message) {
                     fields.time += 'M';
                 }
 
-                if (format.slug === 'sent_paybill_confirmation') {
+                
+                if (format.slug === 'pochi_number') {
+                    console.log('pochi_number');
                     console.log(fields);
                 }
 
