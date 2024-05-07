@@ -77,27 +77,27 @@ Transaction ID: DT85TH896
 Name: John Doe 
 Date: 7/5/24 12.00 PM 
 Account: 0712345678 
+Amount: 100.00  
+
+Thank you.`;
+
+let response7 = `Your payment of Ksh. 100.00 was Successful. 
+
+Transaction ID: DT85TH896 
+Name: John Doe 
+Date: 7/5/24 12.00 PM 
+Account: 
 Amount: 100.00 
 
 Thank you.`;
 
-let response7 = `Your payment of Ksh. 100.00 was Successful.
+let response8 = `Your payment of Ksh. 100.00 was Successful. 
 
-Transaction ID: DT85TH896
-Name: John Doe
-Date: 7/5/24 12.00 PM
-Account: 
-Amount: 100.00
-
-Thank you.`;
-
-let response8 = `Your payment of Ksh. 100.00 was Successful.
-
-Transaction ID: DT85TH896
-Name: John Doe
-Date: 7/5/24 12.00 PM
-Account: 
-Amount: 100.00
+Transaction ID: DT85TH896 
+Name: John Doe 
+Date: 7/5/24 12.00 PM 
+Account:  
+Amount: 100.00 
 
 Thank you.`;
 
