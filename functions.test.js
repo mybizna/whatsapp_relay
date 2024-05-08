@@ -61,9 +61,12 @@ let member = "Name: John Doe\n" +
     "Phone: 0712345678\n";
 
 let pledge = "MemberNo: 001\n" +
-    "Fund: 001\n"+
-    "Amount: 100\n"
-    ;
+    "Fund: MM\n" +
+    "Amount: 100\n";
+
+let payment = "MemberNo: 001\n" +
+    "Code: DT85TH896\n" +
+    "Fund: MF\n";
 
 // Response for message
 let response = `Your payment of Ksh. 100.00 was Successful. 
