@@ -60,6 +60,11 @@ let message7 = "DT85TH896 Confirmed. Ksh100.00 paid to John Doe on 7/5/24 at 12.
 let member = "Name: John Doe\n" +
     "Phone: 0712345678\n";
 
+let pledge = "MemberNo: 001\n" +
+    "Fund: 001\n"+
+    "Amount: 100\n"
+    ;
+
 // Response for message
 let response = `Your payment of Ksh. 100.00 was Successful. 
 

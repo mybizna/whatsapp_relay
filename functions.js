@@ -4,7 +4,6 @@ const csv = require('csv-parser');
 
 const MESSAGES_DIRECTORY = 'data/messages/';
 const PAYMENTS_DIRECTORY = 'data/payments/';
-const PLEDGES_DIRECTORY = 'data/pledges/';
 
 // Create the payments directory if it doesn't exist
 if (!fs.existsSync(PAYMENTS_DIRECTORY)) {
@@ -15,10 +14,6 @@ if (!fs.existsSync(MESSAGES_DIRECTORY)) {
     fs.mkdirSync(MESSAGES_DIRECTORY);
 }
 
-// Create the Pledges directory if it doesn't exist
-if (!fs.existsSync(PLEDGES_DIRECTORY)) {
-    fs.mkdirSync(PLEDGES_DIRECTORY);
-}
 
 var month_names = ["jan", "feb", "mar", "apr", "may", "jun",
     "jul", "aug", "sep", "oct", "nov", "dec"
@@ -236,6 +231,7 @@ async function messageParser(message) {
                 return { slug: format.slug, fields: fields, status: status };
             }
         }
+    } else if (message.includes('MemberNo:') && message.includes('Amount:')) {
     } else if (message.includes('Name:') && message.includes('Phone:')) {
 
         const member_path = 'data/members.csv';
