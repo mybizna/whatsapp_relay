@@ -1,4 +1,44 @@
+const fs = require('fs');
+const path = require('path');
+
 const { processMessage } = require('./functions');
+
+fs.readdir('data/payments', (err, files) => {
+    if (err) {
+        console.error('Error reading directory:', err);
+        return;
+    }
+
+    // Loop through all files in the directory
+    files.forEach(file => {
+        // Construct the full path of the file
+        const filePath = path.join('data/payments', file);
+
+        // Check if the file is a directory
+        fs.stat(filePath, (err, stats) => {
+            if (err) {
+                console.error('Error getting file stats:', err);
+                return;
+            }
+
+            if (stats.isDirectory()) {
+                // If the file is a directory, call the function recursively
+                deleteFilesInDirectory(filePath);
+            } else {
+                // If the file is a regular file, delete it
+                fs.unlink(filePath, err => {
+                    if (err) {
+                        console.error('Error deleting file:', err);
+                    } else {
+                        console.log(`Deleted file: ${filePath}`);
+                    }
+                });
+            }
+        });
+    });
+});
+
+
 
 //paybill_number
 let message = "DT85TH896 Confirmed. on 7/5/24 at 12.00 PM Ksh100.00 received from John Doe 0712345678 Account Number 123456 New Utility balance";
@@ -105,7 +145,7 @@ Thank you.`;
 
 describe("functions", () => {
 
-     
+
     test(message, async () => {
         expect(await processMessage(message)).toBe(response);
     });

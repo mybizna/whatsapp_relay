@@ -4,6 +4,7 @@ const csv = require('csv-parser');
 
 const MESSAGES_DIRECTORY = 'data/messages/';
 const PAYMENTS_DIRECTORY = 'data/payments/';
+const PLEDGES_DIRECTORY = 'data/pledges/';
 
 // Create the payments directory if it doesn't exist
 if (!fs.existsSync(PAYMENTS_DIRECTORY)) {
@@ -12,6 +13,11 @@ if (!fs.existsSync(PAYMENTS_DIRECTORY)) {
 // Create the Messages directory if it doesn't exist
 if (!fs.existsSync(MESSAGES_DIRECTORY)) {
     fs.mkdirSync(MESSAGES_DIRECTORY);
+}
+
+// Create the Pledges directory if it doesn't exist
+if (!fs.existsSync(PLEDGES_DIRECTORY)) {
+    fs.mkdirSync(PLEDGES_DIRECTORY);
 }
 
 var month_names = ["jan", "feb", "mar", "apr", "may", "jun",
@@ -92,13 +98,23 @@ function responseMessage(parsedMessage) {
                 account = parsedMessage.fields.phone;
             }
 
-            response = `Your payment of Ksh. ${parsedMessage.fields.amount} was Successful. ` + "\n\n" +
-                `Transaction ID: ${parsedMessage.fields.code} ` + "\n" +
-                `Name: ${parsedMessage.fields.name} ` + "\n" +
-                `Date: ${parsedMessage.fields.date} ${parsedMessage.fields.time} ` + "\n" +
-                `Account: ${account} ` + "\n" +
-                `Amount: ${parsedMessage.fields.amount} ` + "\n\n" +
-                "Thank you.";
+            if (parsedMessage.status === 'new') {
+                response = `Your payment of Ksh. ${parsedMessage.fields.amount} was Successful. ` + "\n\n" +
+                    `Transaction ID: ${parsedMessage.fields.code} ` + "\n" +
+                    `Name: ${parsedMessage.fields.name} ` + "\n" +
+                    `Date: ${parsedMessage.fields.date} ${parsedMessage.fields.time} ` + "\n" +
+                    `Account: ${account} ` + "\n" +
+                    `Amount: ${parsedMessage.fields.amount} ` + "\n\n" +
+                    "Thank you.";
+            } else {
+                response = `Your payment with code ${parsedMessage.fields.code} Already Exist. ` + "\n\n" +
+                    `Transaction ID: ${parsedMessage.fields.code} ` + "\n" +
+                    `Name: ${parsedMessage.fields.name} ` + "\n" +
+                    `Date: ${parsedMessage.fields.date} ${parsedMessage.fields.time} ` + "\n" +
+                    `Account: ${account} ` + "\n" +
+                    `Amount: ${parsedMessage.fields.amount} ` + "\n\n" +
+                    "Thank you.";
+            }
 
 
             return response;
@@ -106,21 +122,31 @@ function responseMessage(parsedMessage) {
 }
 
 async function saveToCSV(fields, filePath) {
+
     const writer = csvWriter({
         append: true,
         path: filePath,
         header: Object.keys(fields).map(key => ({ id: key, title: key })) // Create headers from object keys
     });
 
-    // Extract values from the fields object
     const records = [fields];
 
+    // Check if the file exists
     if (!fs.existsSync(filePath)) {
-        await writer.writeRecords(records);
-    } else {
-        await writer.writeRecords(records, { append: true });
+
+        // Create headers from object keys
+        headers = {};
+        Object.keys(fields).forEach(key => {
+            headers[key] = key;
+        });
+
+        // append the headers to the records at the top
+        records.unshift(headers);
     }
+
+    await writer.writeRecords(records);
 }
+
 
 // Message parser function
 async function messageParser(message) {
@@ -186,10 +212,28 @@ async function messageParser(message) {
                     fields.time += 'M';
                 }
 
-                // Save parsed messages into separate CSV files based on their slug
-                saveToCSV(fields, `${PAYMENTS_DIRECTORY}${format.slug}-${year}-${month}.csv`);
+                let status = 'exist';
+                let payment_path = `${PAYMENTS_DIRECTORY}${format.slug}-${year}-${month}.csv`;
 
-                return { slug: format.slug, fields: fields };
+                if (fs.existsSync(payment_path)) {
+                    await checkFieldExists(payment_path, 'code', fields.code)
+                        .then(async exists => {
+                            if (!exists) {
+                                // Save parsed messages into separate CSV files based on their slug
+                                saveToCSV(fields, payment_path);
+                                status = 'new';
+                            }
+
+                        })
+                        .catch(error => {
+                            console.error('Error occurred:', error);
+                        });
+                } else {
+                    status = 'new';
+                    saveToCSV(fields, payment_path);
+                }
+
+                return { slug: format.slug, fields: fields, status: status };
             }
         }
     } else if (message.includes('Name:') && message.includes('Phone:')) {
@@ -201,12 +245,10 @@ async function messageParser(message) {
 
         let data = new Date();
         let year = data.getFullYear();
-        //let month = data.getMonth() + 1;
-        //let day = data.getDate();
         let month = (data.getMonth() + 1).toString().padStart(2, '0');
         let day = data.getDate().toString().padStart(2, '0');
 
-        return await checkPhoneNumberExists(member_path, phone)
+        return await checkFieldExists(member_path, 'phone', phone)
             .then(async exists => {
                 let status = 'exist';
                 let member = { 'name': name, 'phone': phone, };
@@ -218,7 +260,7 @@ async function messageParser(message) {
                             status = 'new';
 
                             const fields = {
-                                'member_no': nextMemberNo,
+                                'member_no': nextMemberNo.toString().padStart(3, '0'),
                                 'name': name,
                                 'phone': phone,
                                 'date': `${year}-${month}-${day}`
@@ -264,17 +306,38 @@ async function getNextMemberNumber(filePath) {
     });
 }
 
-// Function to check if a phone number exists in the CSV file
-function checkPhoneNumberExists(filePath, phoneNumber) {
+// Function to check if a field exists with a specific value in the CSV file
+function checkFieldExists(filePath, fieldName, value) {
     return new Promise((resolve, reject) => {
         const results = [];
         fs.createReadStream(filePath)
             .pipe(csv())
             .on('data', (data) => results.push(data))
             .on('end', () => {
-                // Check if the phone number exists in the CSV data
-                const phoneNumberExists = results.some(record => record.phone === phoneNumber);
-                resolve(phoneNumberExists);
+                // Check if the field exists with the specified value in the CSV data
+                const fieldExists = results.some(record => record[fieldName] === value);
+                resolve(fieldExists);
+            })
+            .on('error', (error) => {
+                reject(error);
+            });
+    });
+}
+
+// Function to search for a field and return its value if found, or null otherwise
+function searchField(filePath, fieldName, searchValue) {
+    return new Promise((resolve, reject) => {
+        let fieldValue = null;
+        fs.createReadStream(filePath)
+            .pipe(csv())
+            .on('data', (data) => {
+                // Check if the current record matches the search criteria
+                if (data[fieldName] === searchValue) {
+                    fieldValue = data[fieldName];
+                }
+            })
+            .on('end', () => {
+                resolve(fieldValue);
             })
             .on('error', (error) => {
                 reject(error);
