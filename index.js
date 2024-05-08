@@ -1,7 +1,7 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const fs = require('fs');
-const { processMessage, } = require('./functions');
+const { processMessage, processEvents} = require('./functions');
 
 
 const wwebVersion = '2.2412.54'; // WhatsApp Web version to use
@@ -38,6 +38,10 @@ client.on('ready', () => {
 
 client.on('message', async (msg) => {
     await client.sendSeen(msg.from);
+
+    (async () => {
+        await processEvents();
+    })();
 
     if (msg.from.endsWith('@g.us') && msg.author === 'Test Group') {
 

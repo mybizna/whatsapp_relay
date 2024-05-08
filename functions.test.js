@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const { processMessage } = require('./functions');
+const { processMessage, processEvents } = require('./functions');
 
 fs.readdir('data/payments', (err, files) => {
     if (err) {
@@ -61,12 +61,12 @@ let member = "Name: John Doe\n" +
     "Phone: 0712345678\n";
 
 let pledge = "MemberNo: 001\n" +
-    "Fund: MM\n" +
+    "Fund: MAY\n" +
     "Amount: 100\n";
 
 let payment = "MemberNo: 001\n" +
     "Code: DT85TH896\n" +
-    "Fund: MF\n";
+    "Fund: MAY\n";
 
 // Response for message
 let response = `Your payment of Ksh. 100.00 was Successful. 
@@ -153,6 +153,9 @@ Thank you.`;
 
 describe("functions", () => {
 
+    (async () => {
+        await processEvents();
+    })();
 
     test(message, async () => {
         expect(await processMessage(message)).toBe(response);

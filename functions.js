@@ -4,6 +4,7 @@ const csv = require('csv-parser');
 
 const MESSAGES_DIRECTORY = 'data/messages/';
 const PAYMENTS_DIRECTORY = 'data/payments/';
+const FUNDS_DIRECTORY = 'data/funds/';
 
 // Create the payments directory if it doesn't exist
 if (!fs.existsSync(PAYMENTS_DIRECTORY)) {
@@ -14,10 +15,34 @@ if (!fs.existsSync(MESSAGES_DIRECTORY)) {
     fs.mkdirSync(MESSAGES_DIRECTORY);
 }
 
+// Create the Funds directory if it doesn't exist
+if (!fs.existsSync(FUNDS_DIRECTORY)) {
+    fs.mkdirSync(FUNDS_DIRECTORY);
+}
 
 var month_names = ["jan", "feb", "mar", "apr", "may", "jun",
     "jul", "aug", "sep", "oct", "nov", "dec"
 ];
+
+// Function to process events from the CSV file
+async function processEvents() {
+    await fs.createReadStream(EVENTS_FILE_PATH)
+        .pipe(csv())
+        .on('data', async (row) => {
+            // Extract the "slug" value from the row
+            const slug = row.slug;
+
+            // Save messages that trigger the bot to respond into a CSV file
+            await saveToCSV({ 'member_no': '001', 'amount': 100, 'pledge': 0 }, FUNDS_DIRECTORY + '/' + slug + '.csv');
+
+        })
+        .on('end', () => {
+            console.log('All events processed successfully.');
+        })
+        .on('error', (error) => {
+            console.error('Error processing events:', error);
+        });
+}
 
 /**
  * Process incoming messages
@@ -110,8 +135,7 @@ function responseMessage(parsedMessage) {
                     `Amount: ${parsedMessage.fields.amount} ` + "\n\n" +
                     "Thank you.";
             }
-
-
+            
             return response;
     }
 }
@@ -346,4 +370,5 @@ module.exports = {
     processMessage,
     saveToCSV,
     messageParser,
+    processEvents,
 };
