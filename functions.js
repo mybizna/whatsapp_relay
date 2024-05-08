@@ -26,7 +26,7 @@ var month_names = ["jan", "feb", "mar", "apr", "may", "jun",
 
 // Function to process events from the CSV file
 async function processEvents() {
-    await fs.createReadStream(EVENTS_FILE_PATH)
+    await fs.createReadStream('data/funds.csv')
         .pipe(csv())
         .on('data', async (row) => {
             // Extract the "slug" value from the row
@@ -135,7 +135,7 @@ function responseMessage(parsedMessage) {
                     `Amount: ${parsedMessage.fields.amount} ` + "\n\n" +
                     "Thank you.";
             }
-            
+
             return response;
     }
 }
@@ -256,6 +256,43 @@ async function messageParser(message) {
             }
         }
     } else if (message.includes('MemberNo:') && message.includes('Amount:')) {
+
+        let member_no = message.match(/MemberNo: (.*)/)[1].trim();
+        let amount = message.match(/Amount: (.*)/)[1].trim();
+        let fund = message.match(/Fund: (.*)/)[1].trim();
+
+        // Search for record in funds file data/funds/${fund}.csv and add if not exist and update the pledge field if exist
+        let fund_path = `data/funds/${fund}.csv`;
+
+        let newData = { 'member_no': member_no, 'amount': 0, 'pledge': amount }
+
+        return await modifyCSVRecord(fund_path, 'pledge', 'member_no', member_no, newData)
+            .then(async item => {
+                return item;
+            })
+            .catch(error => {
+                console.error('Error occurred:', error);
+            });
+
+    } else if (message.includes('MemberNo:') && message.includes('Code:')) {
+
+        let member_no = message.match(/MemberNo: (.*)/)[1].trim();
+        let code = message.match(/Code: (.*)/)[1].trim();
+        let fund = message.match(/Fund: (.*)/)[1].trim();
+
+        let fund_path = `data/funds/${fund}.csv`;
+
+        let newData = { 'member_no': member_no, 'amount': amount, 'pledge': 0 }
+
+        return await modifyCSVRecord(fund_path, 'payment', 'member_no', member_no, newData)
+            .then(async item => {
+                return item;
+            })
+            .catch(error => {
+                console.error('Error occurred:', error);
+            });
+
+
     } else if (message.includes('Name:') && message.includes('Phone:')) {
 
         const member_path = 'data/members.csv';
@@ -337,6 +374,62 @@ function checkFieldExists(filePath, fieldName, value) {
                 // Check if the field exists with the specified value in the CSV data
                 const fieldExists = results.some(record => record[fieldName] === value);
                 resolve(fieldExists);
+            })
+            .on('error', (error) => {
+                reject(error);
+            });
+    });
+}
+
+// Function to update a CSV record
+function modifyCSVRecord(csvFilePath, slug, searchField, searchValue, newData) {
+    return new Promise((resolve, reject) => {
+        let rows = [];
+        let status = 'exist';
+
+        // Read the CSV file and update the record
+        fs.createReadStream(csvFilePath)
+            .pipe(csv())
+            .on('data', (row) => {
+                if (row[searchField] === searchValue) {
+                    status = 'new';
+
+                    if (slug === 'payment') {
+                        if (row['amount'] > 0) {
+                            newData.amount = row['amount'] + newData.amount;
+                        }
+                        if (row['pledge'] > 0) {
+                            newData.pledge = row['pledge'] - newData.amount;
+                        }
+                    }
+
+                    if (slug === 'pledge') {
+                        if (row['amount'] > 0) {
+                            newData.amount = row['amount'];
+                        }
+                    }
+
+                    rows.push(newData);
+                } else {
+                    rows.push(row);
+                }
+            })
+            .on('end', () => {
+                // Write the updated data back to the CSV file
+                const csvWriter = createObjectCsvWriter({
+                    path: csvFilePath,
+                    header: Object.keys(newData)
+                });
+
+                csvWriter.writeRecords(rows)
+                    .then(() => {
+                        console.log('Record updated successfully!');
+                    })
+                    .catch((err) => {
+                        console.error('Error writing to file:', err);
+                    });
+
+                resolve({ slug: slug, data: newData, status: status });
             })
             .on('error', (error) => {
                 reject(error);
