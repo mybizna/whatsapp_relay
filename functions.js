@@ -29,12 +29,31 @@ async function processEvents() {
     await fs.createReadStream('data/funds.csv')
         .pipe(csv())
         .on('data', async (row) => {
+
             // Extract the "slug" value from the row
             const slug = row.slug;
 
-            // Save messages that trigger the bot to respond into a CSV file
-            await saveToCSV({ 'member_no': '001', 'amount': 100, 'pledge': 0 }, FUNDS_DIRECTORY + '/' + slug + '.csv');
+            let fund_path = FUNDS_DIRECTORY + '/' + slug + '.csv'
 
+            // Check if the file exists
+            if (!fs.existsSync(fund_path)) {
+                let rows = [];
+                // Get all members from data/members.csv and add them to the fund file
+                await fs.createReadStream('data/members.csv')
+                    .pipe(csv())
+                    .on('data', async (member) => {
+                        rows.push({ 'member_no': member.member_no, 'amount': 0, 'pledge': 0 });
+                    }
+                    )
+                    .on('end', async () => {
+                        // Save messages that trigger the bot to respond into a CSV file
+                        await saveToCSV(rows, fund_path, true);
+                        console.log('All members processed successfully.');
+                    })
+                    .on('error', (error) => {
+                        console.error('Error processing members:', error);
+                    });
+            }
         })
         .on('end', () => {
             console.log('All events processed successfully.');
@@ -140,27 +159,41 @@ function responseMessage(parsedMessage) {
     }
 }
 
-async function saveToCSV(fields, filePath) {
+async function saveToCSV(fields, filePath, append = true) {
+
+    let header = {};
+    let records = [];
+
+    // check if fields is an array or object and process header accordingly
+    if (Array.isArray(fields)) {
+        header = Object.keys(fields[0]).map(key => ({ id: key, title: key }));
+        records = fields;
+    } else if (typeof fields === 'object') {
+        header = Object.keys(fields).map(key => ({ id: key, title: key }));
+        records = [fields];
+    }
 
     const writer = csvWriter({
-        append: true,
+        append: append,
         path: filePath,
-        header: Object.keys(fields).map(key => ({ id: key, title: key })) // Create headers from object keys
+        header: header  // Create headers from object keys
     });
 
-    const records = [fields];
-
     // Check if the file exists
-    if (!fs.existsSync(filePath)) {
+    if (!fs.existsSync(filePath) || !append) {
 
-        // Create headers from object keys
-        headers = {};
-        Object.keys(fields).forEach(key => {
-            headers[key] = key;
-        });
+        // Check if fields is not empty
+        if (records.length !== 0) {
 
-        // append the headers to the records at the top
-        records.unshift(headers);
+            // Create headers from object keys
+            let headers = {};
+            Object.keys(fields[0]).forEach(key => {
+                headers[key] = key;
+            });
+
+            // append the headers to the records at the top
+            records.unshift(headers);
+        }
     }
 
     await writer.writeRecords(records);
@@ -257,12 +290,15 @@ async function messageParser(message) {
         }
     } else if (message.includes('MemberNo:') && message.includes('Amount:')) {
 
+        console.log("MemberNo:Amount:");
+
         let member_no = message.match(/MemberNo: (.*)/)[1].trim();
         let amount = message.match(/Amount: (.*)/)[1].trim();
         let fund = message.match(/Fund: (.*)/)[1].trim();
 
         // Search for record in funds file data/funds/${fund}.csv and add if not exist and update the pledge field if exist
         let fund_path = `data/funds/${fund}.csv`;
+        console.log(fund_path);
 
         let newData = { 'member_no': member_no, 'amount': 0, 'pledge': amount }
 
@@ -276,21 +312,54 @@ async function messageParser(message) {
 
     } else if (message.includes('MemberNo:') && message.includes('Code:')) {
 
+        console.log("MemberNo:Code:");
+
         let member_no = message.match(/MemberNo: (.*)/)[1].trim();
         let code = message.match(/Code: (.*)/)[1].trim();
         let fund = message.match(/Fund: (.*)/)[1].trim();
 
-        let fund_path = `data/funds/${fund}.csv`;
+        let data = new Date();
+        let year = data.getFullYear();
+        let month = (data.getMonth() + 1).toString().padStart(2, '0');
 
-        let newData = { 'member_no': member_no, 'amount': amount, 'pledge': 0 }
+        // search for code in data/payments/paybill_number-${year}-${month}.csv, data/payments/pochi_number-${year}-${month}.csv and data/payments/personal_number-${year}-${month}.csv
+        let files = [`paybill_number-${year}-${month}.csv`, `pochi_number-${year}-${month}.csv`, `personal_number-${year}-${month}.csv`];
+        let payment = null;
 
-        return await modifyCSVRecord(fund_path, 'payment', 'member_no', member_no, newData)
-            .then(async item => {
-                return item;
-            })
-            .catch(error => {
-                console.error('Error occurred:', error);
-            });
+        for (let file of files) {
+            let payment_path = `${PAYMENTS_DIRECTORY}${file}`;
+
+            if (fs.existsSync(payment_path)) {
+                await searchField(payment_path, 'code', code)
+                    .then(async record => {
+                        if (exists) {
+                            payment = record;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error occurred:', error);
+                    });
+            }
+
+        }
+
+        if (payment) {
+            let amount = payment.amount;
+
+            saveToCSV(payment, `data/payments.csv`);
+
+            let fund_path = `data/funds/${fund}.csv`;
+
+            let newData = { 'member_no': member_no, 'amount': amount, 'pledge': 0 }
+
+            return await modifyCSVRecord(fund_path, 'payment', 'member_no', member_no, newData)
+                .then(async item => {
+                    return item;
+                })
+                .catch(error => {
+                    console.error('Error occurred:', error);
+                });
+        }
 
 
     } else if (message.includes('Name:') && message.includes('Phone:')) {
@@ -384,6 +453,7 @@ function checkFieldExists(filePath, fieldName, value) {
 // Function to update a CSV record
 function modifyCSVRecord(csvFilePath, slug, searchField, searchValue, newData) {
     return new Promise((resolve, reject) => {
+        let updated = false;
         let rows = [];
         let status = 'exist';
 
@@ -391,43 +461,49 @@ function modifyCSVRecord(csvFilePath, slug, searchField, searchValue, newData) {
         fs.createReadStream(csvFilePath)
             .pipe(csv())
             .on('data', (row) => {
-                if (row[searchField] === searchValue) {
-                    status = 'new';
 
-                    if (slug === 'payment') {
-                        if (row['amount'] > 0) {
-                            newData.amount = row['amount'] + newData.amount;
+                console.log('------------------------');
+                console.log(row);
+
+                if (row[searchField]) {
+                    if (row[searchField] === searchValue) {
+                        status = 'new';
+
+                        if (slug === 'payment') {
+                            if (row['amount'] > 0) {
+                                newData['amount'] = row['amount'] + newData['amount'];
+                            }
+                            if (row['pledge'] > 0) {
+                                newData['pledge'] = row['pledge'] - newData['amount'];
+                            }
                         }
-                        if (row['pledge'] > 0) {
-                            newData.pledge = row['pledge'] - newData.amount;
+
+                        if (slug === 'pledge') {
+                            if (row['amount'] > 0) {
+                                newData['amount'] = row['amount'];
+                            }
                         }
+
+                        updated = true;
+
+                        rows.push(newData);
+                    } else {
+                        rows.push(row);
                     }
-
-                    if (slug === 'pledge') {
-                        if (row['amount'] > 0) {
-                            newData.amount = row['amount'];
-                        }
-                    }
-
-                    rows.push(newData);
-                } else {
-                    rows.push(row);
                 }
-            })
-            .on('end', () => {
-                // Write the updated data back to the CSV file
-                const csvWriter = createObjectCsvWriter({
-                    path: csvFilePath,
-                    header: Object.keys(newData)
-                });
 
-                csvWriter.writeRecords(rows)
-                    .then(() => {
-                        console.log('Record updated successfully!');
-                    })
-                    .catch((err) => {
-                        console.error('Error writing to file:', err);
-                    });
+                console.log(rows);
+
+            })
+            .on('end', async () => {
+
+                if (!updated) {
+                    rows.push(newData);
+                }
+
+                console.log(rows);
+
+                await saveToCSV(rows, fund_path, false);
 
                 resolve({ slug: slug, data: newData, status: status });
             })
@@ -446,11 +522,11 @@ function searchField(filePath, fieldName, searchValue) {
             .on('data', (data) => {
                 // Check if the current record matches the search criteria
                 if (data[fieldName] === searchValue) {
-                    fieldValue = data[fieldName];
+                    resolve(data);
                 }
             })
             .on('end', () => {
-                resolve(fieldValue);
+                resolve(false);
             })
             .on('error', (error) => {
                 reject(error);

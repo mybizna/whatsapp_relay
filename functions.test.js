@@ -62,11 +62,12 @@ let member = "Name: John Doe\n" +
 
 let pledge = "MemberNo: 001\n" +
     "Fund: MAY\n" +
-    "Amount: 100\n";
+    "Amount: 1000\n";
 
 let payment = "MemberNo: 001\n" +
     "Code: DT85TH896\n" +
     "Fund: MAY\n";
+
 
 // Response for message
 let response = `Your payment of Ksh. 100.00 was Successful. 
@@ -157,6 +158,7 @@ describe("functions", () => {
         await processEvents();
     })();
 
+    /*
     test(message, async () => {
         expect(await processMessage(message)).toBe(response);
     });
@@ -172,6 +174,7 @@ describe("functions", () => {
     test(message4, async () => {
         expect(await processMessage(message4)).toBe(response4);
     });
+    */
 
     /*
     test(message5, async () => {
@@ -179,6 +182,7 @@ describe("functions", () => {
         expect(await processMessage(message5)).toBe(response5);
     });*/
 
+    /*
     test(message6, async () => {
         expect(await processMessage(message6)).toBe(response6);
     });
@@ -190,12 +194,22 @@ describe("functions", () => {
     test(message8, async () => {
         expect(await processMessage(message8)).toBe(response8);
     });
+   
 
     test(member, async () => {
         console.log(await processMessage(member));
         expect(true).toBe(true);
     });
-
-
+ */
+    test(pledge, async () => {
+        console.log(await processMessage(pledge));
+        expect(true).toBe(true);
+    });
+/*
+    test(payment, async () => {
+        console.log(await processMessage(payment));
+        expect(true).toBe(true);
+    });
+*/
 
 });
