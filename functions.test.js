@@ -62,7 +62,7 @@ let member = "Name: John Doe\n" +
 
 let pledge = "MemberNo: 001\n" +
     "Fund: MAY\n" +
-    "Amount: 1000\n";
+    "Pledge: 1000\n";
 
 let payment = "MemberNo: 001\n" +
     "Code: DT85TH896\n" +

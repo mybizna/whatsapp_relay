@@ -1,3 +1,3 @@
-name,slug,start_at,end_at
-"Monthly Contribution for May","MAY","01/05/2024","31/05/2024"
-"Susan Dad Burial","SUSAN","01/05/2024","20/05/2024"
+name,slug,default_pledge,start_at,end_at
+"Monthly Contribution for May","MAY",50,"01/05/2024","31/05/2024"
+"Susan Dad Burial","SUSAN",10,"01/05/2024","20/05/2024"

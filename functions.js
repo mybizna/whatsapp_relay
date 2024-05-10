@@ -42,7 +42,8 @@ async function processEvents() {
                 await fs.createReadStream('data/members.csv')
                     .pipe(csv())
                     .on('data', async (member) => {
-                        rows.push({ 'member_no': member.member_no, 'amount': 0, 'pledge': 0 });
+                        let pledge = (row.default_pledge) ? row.default_pledge : 0;
+                        rows.push({ 'member_no': member.member_no, 'amount': 0, 'pledge': pledge });
                     }
                     )
                     .on('end', async () => {
@@ -76,11 +77,21 @@ async function processMessage(message) {
 
     // message file to be combnation of year and month
     const date = new Date();
+
     const year = date.getFullYear();
-    const month = month_names[date.getMonth()];
+    let month = (date.getMonth() + 1).toString().padStart(2, '0');
+    let day = date.getDate().toString().padStart(2, '0');
+
+    let hour = date.getHours().toString().padStart(2, '0');
+    let minute = date.getMinutes().toString().padStart(2, '0');
+    let second = date.getSeconds().toString().padStart(2, '0');
+
+    const month_str = month_names[date.getMonth()];
+
+    let message_obj = { 'message': message, 'created_at': `${year}-${month}-${day} ${hour}:${minute}:${second}` };
 
     // Save messages that trigger the bot to respond into a CSV file
-    await saveToCSV({ 'message': message }, MESSAGES_DIRECTORY + '/' + year + '-' + month + '.csv');
+    await saveToCSV(message_obj, MESSAGES_DIRECTORY + '/' + year + '-' + month_str + '.csv');
 
     // Call message parser function for eligible messages
     const parsedMessage = await messageParser(message);
@@ -154,15 +165,48 @@ function responseMessage(parsedMessage) {
                     `Amount: ${parsedMessage.fields.amount} ` + "\n\n" +
                     "Thank you.";
             }
+            break;
+        case 'pledge':
+            if (parsedMessage.status === 'new') {
+                response = `Pledge Sucessfully added: \n\n` +
+                    `Member No: ${parsedMessage.fields.member_no} ` + "\n" +
+                    `Fund: ${parsedMessage.fields.fund} ` + "\n" +
+                    `Pledge: ${parsedMessage.fields.pledge} ` + "\n" +
+                    `Status: ${parsedMessage.status} ` + "\n\n" +
+                    "Thank you.";
+            } else if (parsedMessage.status === 'rejected') {
+                response = `Pledge rejected because pledge submitted is less than current pledge: \n\n` +
+                    `Member No: ${parsedMessage.fields.member_no} ` + "\n" +
+                    `Fund: ${parsedMessage.fields.fund} ` + "\n" +
+                    `Pledge: ${parsedMessage.fields.pledge} ` + "\n" +
+                    `Status: ${parsedMessage.status} ` + "\n\n" +
+                    "Contact Admin for Assistance.";
+            } else {
+                response = `Pledge Already Exist: \n\n` +
+                    `Member No: ${parsedMessage.fields.member_no} ` + "\n" +
+                    `Fund: ${parsedMessage.fields.fund} ` + "\n" +
+                    `Pledge: ${parsedMessage.fields.pledge} ` + "\n" +
+                    `Status: ${parsedMessage.status} ` + "\n\n" +
+                    "Thank you.";
+            }
+            break;
 
-            return response;
-    }
+        }
+
+
+
+        return response;
 }
 
 async function saveToCSV(fields, filePath, append = true) {
 
     let header = {};
     let records = [];
+
+    // Check if the file exists and set append to false if it doesn't
+    if (!fs.existsSync(filePath)) {
+        append = false;
+    }
 
     // check if fields is an array or object and process header accordingly
     if (Array.isArray(fields)) {
@@ -187,12 +231,12 @@ async function saveToCSV(fields, filePath, append = true) {
 
             // Create headers from object keys
             let headers = {};
-            Object.keys(fields[0]).forEach(key => {
+            Object.keys(records[0]).forEach(key => {
                 headers[key] = key;
             });
 
             // append the headers to the records at the top
-            records.unshift(headers);
+            //records.unshift(headers);
         }
     }
 
@@ -288,19 +332,19 @@ async function messageParser(message) {
                 return { slug: format.slug, fields: fields, status: status };
             }
         }
-    } else if (message.includes('MemberNo:') && message.includes('Amount:')) {
+    } else if (message.includes('MemberNo:') && message.includes('Pledge:')) {
 
-        console.log("MemberNo:Amount:");
+        console.log("MemberNo:Pledge:");
 
         let member_no = message.match(/MemberNo: (.*)/)[1].trim();
-        let amount = message.match(/Amount: (.*)/)[1].trim();
+        let pledge = message.match(/Pledge: (.*)/)[1].trim();
         let fund = message.match(/Fund: (.*)/)[1].trim();
 
         // Search for record in funds file data/funds/${fund}.csv and add if not exist and update the pledge field if exist
         let fund_path = `data/funds/${fund}.csv`;
         console.log(fund_path);
 
-        let newData = { 'member_no': member_no, 'amount': 0, 'pledge': amount }
+        let newData = { 'member_no': member_no, 'amount': 0, 'pledge': pledge }
 
         return await modifyCSVRecord(fund_path, 'pledge', 'member_no', member_no, newData)
             .then(async item => {
@@ -318,9 +362,9 @@ async function messageParser(message) {
         let code = message.match(/Code: (.*)/)[1].trim();
         let fund = message.match(/Fund: (.*)/)[1].trim();
 
-        let data = new Date();
-        let year = data.getFullYear();
-        let month = (data.getMonth() + 1).toString().padStart(2, '0');
+        let date = new Date();
+        let year = date.getFullYear();
+        let month = (date.getMonth() + 1).toString().padStart(2, '0');
 
         // search for code in data/payments/paybill_number-${year}-${month}.csv, data/payments/pochi_number-${year}-${month}.csv and data/payments/personal_number-${year}-${month}.csv
         let files = [`paybill_number-${year}-${month}.csv`, `pochi_number-${year}-${month}.csv`, `personal_number-${year}-${month}.csv`];
@@ -369,10 +413,10 @@ async function messageParser(message) {
         let name = message.match(/Name: (.*)/)[1].trim();
         let phone = message.match(/Phone: (.*)/)[1].trim();
 
-        let data = new Date();
-        let year = data.getFullYear();
-        let month = (data.getMonth() + 1).toString().padStart(2, '0');
-        let day = data.getDate().toString().padStart(2, '0');
+        let date = new Date();
+        let year = date.getFullYear();
+        let month = (date.getMonth() + 1).toString().padStart(2, '0');
+        let day = date.getDate().toString().padStart(2, '0');
 
         return await checkFieldExists(member_path, 'phone', phone)
             .then(async exists => {
@@ -462,8 +506,10 @@ function modifyCSVRecord(csvFilePath, slug, searchField, searchValue, newData) {
             .pipe(csv())
             .on('data', (row) => {
 
-                console.log('------------------------');
-                console.log(row);
+                // If the row key is equal to it value skip
+                if (row['member_no'] === 'member_no') {
+                    return;
+                }
 
                 if (row[searchField]) {
                     if (row[searchField] === searchValue) {
@@ -482,6 +528,11 @@ function modifyCSVRecord(csvFilePath, slug, searchField, searchValue, newData) {
                             if (row['amount'] > 0) {
                                 newData['amount'] = row['amount'];
                             }
+
+                            if (newData['pledge'] < row['pledge']) {
+                                newData['pledge'] = row['pledge'];
+                                status = 'rejected';
+                            }
                         }
 
                         updated = true;
@@ -492,18 +543,15 @@ function modifyCSVRecord(csvFilePath, slug, searchField, searchValue, newData) {
                     }
                 }
 
-                console.log(rows);
-
             })
             .on('end', async () => {
+
 
                 if (!updated) {
                     rows.push(newData);
                 }
 
-                console.log(rows);
-
-                await saveToCSV(rows, fund_path, false);
+                await saveToCSV(rows, csvFilePath, false);
 
                 resolve({ slug: slug, data: newData, status: status });
             })
