@@ -148,6 +148,10 @@ function responseMessage(parsedMessage) {
                 account = parsedMessage.fields.phone;
             }
 
+            if (parsedMessage.fields.member_no) {
+                account += ' ' + (account == '') ? parsedMessage.fields.member_no : ' ' + parsedMessage.fields.member_no;
+            }
+
             if (parsedMessage.status === 'new') {
                 response = `Your payment of Ksh. ${parsedMessage.fields.amount} was Successful. ` + "\n\n" +
                     `Transaction ID: ${parsedMessage.fields.code} ` + "\n" +
@@ -191,11 +195,11 @@ function responseMessage(parsedMessage) {
             }
             break;
 
-        }
+    }
 
 
 
-        return response;
+    return response;
 }
 
 async function saveToCSV(fields, filePath, append = true) {
@@ -246,7 +250,20 @@ async function saveToCSV(fields, filePath, append = true) {
 
 // Message parser function
 async function messageParser(message) {
-    if (message.includes('@bot') || message.includes('/bot') || message.includes('M-PESA') || message.includes('Confirmed.') || message.includes('Utility balance')) {
+
+    if (message.includes('@bot') || message.includes('/bot')) {
+
+
+        let fields = { 'message': message, 'created_at': new Date() };
+
+        return { slug: 'bot', fields: fields, status: 'auto' };
+
+
+    } else if (message.includes('M-PESA') || message.includes('Confirmed.') || message.includes('Utility balance')) {
+
+
+
+
         let messageFormats = [
             {
                 "slug": "paybill_number",
@@ -289,6 +306,9 @@ async function messageParser(message) {
         const date = new Date();
         const year = date.getFullYear();
         const month = month_names[date.getMonth()];
+        let tmp_fields = {};
+        let status = 'exist';
+        let format_slug = 'default';
 
         for (let format of messageFormats) {
             const match = message.match(format.format);
@@ -308,7 +328,7 @@ async function messageParser(message) {
                     fields.time += 'M';
                 }
 
-                let status = 'exist';
+
                 let payment_path = `${PAYMENTS_DIRECTORY}${format.slug}-${year}-${month}.csv`;
 
                 if (fs.existsSync(payment_path)) {
@@ -329,9 +349,22 @@ async function messageParser(message) {
                     saveToCSV(fields, payment_path);
                 }
 
-                return { slug: format.slug, fields: fields, status: status };
+                format_slug = format.slug;
+                tmp_fields = fields;
+
+                break;
+
             }
+
         }
+
+        let member_no = message.match(/MemberNo: (.*)/)[1].trim();
+
+        tmp_fields['member_no'] = member_no;
+
+        return { slug: format_slug, fields: tmp_fields, status: status };
+
+
     } else if (message.includes('MemberNo:') && message.includes('Pledge:')) {
 
         console.log("MemberNo:Pledge:");
