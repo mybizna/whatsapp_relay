@@ -358,9 +358,11 @@ async function messageParser(message) {
 
         }
 
-        let member_no = message.match(/MemberNo: (.*)/)[1].trim();
-
-        tmp_fields['member_no'] = member_no;
+        if (message.includes('MemberNo:')) {
+            let member_no = message.match(/MemberNo: (.*)/)[1].trim();
+    
+            tmp_fields['member_no'] = member_no;
+        }
 
         return { slug: format_slug, fields: tmp_fields, status: status };
 

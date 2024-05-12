@@ -56,8 +56,8 @@ let message4 = "DT85TH896 Confirmed. Ksh100.00 sent to John Doe on 7/5/24 at 12.
 let message7 = "DT85TH896 Confirmed. Ksh100.00 paid to John Doe on 7/5/24 at 12.00 PM New M-PESA balance"
 
 //sent_tillno_confirmation
-let message9 = "DT85TH896 Confirmed. Ksh100.00 paid to John Doe on 7/5/24 at 12.00 PM New M-PESA balance\n"+
-"MemberNo: 001";
+let message9 = "DT85TH896 Confirmed. Ksh100.00 paid to John Doe on 7/5/24 at 12.00 PM New M-PESA balance\n" +
+    "MemberNo: 001";
 
 //let message5 = "DT85TH896 Confirmed. You have received Ksh3,500.00 from 501901 - KCB Money Transfer Services on 31/7/13 at 6:43 PM New M-PESA balance is Ksh11,312.00.Save & get a loan on Mshwari";
 
@@ -172,7 +172,7 @@ describe("functions", () => {
         await processEvents();
     })();
 
-    /*
+
     test(message, async () => {
         expect(await processMessage(message)).toBe(response);
     });
@@ -188,15 +188,14 @@ describe("functions", () => {
     test(message4, async () => {
         expect(await processMessage(message4)).toBe(response4);
     });
-    */
 
     /*
     test(message5, async () => {
         console.log(await processMessage(message5));
         expect(await processMessage(message5)).toBe(response5);
-    });*/
-
-    /*
+    });
+    */
+   
     test(message6, async () => {
         expect(await processMessage(message6)).toBe(response6);
     });
@@ -208,21 +207,15 @@ describe("functions", () => {
     test(message8, async () => {
         expect(await processMessage(message8)).toBe(response8);
     });
-   
-
-
- */
 
     test(message9, async () => {
         expect(await processMessage(message9)).toBe(response9);
     });
 
-/*
     test(pledge, async () => {
         console.log(await processMessage(pledge));
         expect(true).toBe(true);
     });
-
 
     test(member, async () => {
         console.log(await processMessage(member));
@@ -233,6 +226,6 @@ describe("functions", () => {
         console.log(await processMessage(payment));
         expect(true).toBe(true);
     });
-*/
+
 
 });
